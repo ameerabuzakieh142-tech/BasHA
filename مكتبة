@@ -1,0 +1,308 @@
+import React, { useState } from "react";
+import { Member } from "../types";
+import { Lock, User, Shield, Info, Library, CheckCircle2, AlertCircle, Sparkles, Sun, BookOpen } from "lucide-react";
+
+interface LoginProps {
+  members: Member[];
+  onLogin: (role: "admin" | "student", user: { name: string; memberId?: number }) => void;
+}
+
+export default function Login({ members, onLogin }: LoginProps) {
+  const [activeTab, setActiveTab] = useState<"student" | "admin">("student");
+  
+  // Form states
+  const [firstName, setFirstName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Quick Demo Auto-fill definitions
+  const demoUsers = {
+    admin: { name: "أدمن", password: "admin123" },
+    students: [
+      { firstName: "محمد", fullName: "محمد أحمد السعيد", id: 1 },
+      { firstName: "sara", fullName: "sara.ali@email.com", id: 2 },
+      { firstName: "عمر", fullName: "عمر عبد الله النجار", id: 3 },
+      { firstName: "رانية", fullName: "رانية حسن المصري", id: 4 },
+    ],
+  };
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const nameClean = firstName.trim().toLowerCase();
+    const passClean = password.trim();
+
+    if (!nameClean) {
+      setError("الرجاء إدخال الاسم الأول");
+      return;
+    }
+    if (!passClean) {
+      setError("الرجاء إدخال كلمة المرور");
+      return;
+    }
+
+    if (activeTab === "admin") {
+      // Validate Admin Credentials
+      const isAdminName = ["admin", "أدمن", "المدير", "مدير"].includes(nameClean);
+      const isAdminPass = ["admin", "admin123", "123456"].includes(passClean);
+      
+      if (isAdminName && isAdminPass) {
+        onLogin("admin", { name: "مدير النظام" });
+      } else {
+        setError("خطأ في الاسم الأول أو كلمة مرور المدير (الافتراضي: أدمن / admin123)");
+      }
+    } else {
+      // Validate Student Credentials
+      // Expected password is 'student' or 'student123'
+      const isStudentPass = ["student", "student123", "123456", "123"].includes(passClean);
+      
+      if (!isStudentPass) {
+        setError("خطأ في كلمة مرور الطالب (الافتراضي: student123)");
+        return;
+      }
+
+      // Try to find a member whose first name matches the input
+      const matchedMember = members.find((m) => {
+        // Handle name splitting safely
+        const fullName = m.Full_Name || "";
+        const firstWord = fullName.trim().split(/\s+/)[0]?.toLowerCase();
+        
+        // Also support matching email username just in case (e.g. sara.ali@email.com -> sara)
+        const emailFirst = m.Email ? m.Email.split("@")[0].split(".")[0].toLowerCase() : "";
+        
+        return firstWord === nameClean || emailFirst === nameClean || fullName.toLowerCase().includes(nameClean);
+      });
+
+      if (matchedMember) {
+        // Found! Log in with this member identification.
+        onLogin("student", { name: matchedMember.Full_Name, memberId: matchedMember.Member_ID });
+      } else {
+        // If not found, create a temporary student member record or prompt.
+        // To be extremely helpful, we allow entering any name, but notify them that we matched a generic student or recommend trying a suggested name.
+        setError("لم نعثر على مشترك مسجل بهذا الاسم الأول. جرب استخدام أحد الأسماء المقترحة بالأسفل!");
+      }
+    }
+  };
+
+  const handleQuickLogin = (role: "admin" | "student", userVal: { name: string; pass: string; memberId?: number }) => {
+    setFirstName(userVal.name);
+    setPassword(userVal.pass);
+    setError(null);
+    setActiveTab(role);
+    
+    // Auto-login instantly for speed/convenience
+    if (role === "admin") {
+      onLogin("admin", { name: "مدير النظام" });
+    } else {
+      onLogin("student", { name: userVal.name, memberId: userVal.memberId });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 font-sans" dir="rtl">
+      <div className="max-w-md w-full space-y-8 bg-slate-800 border border-slate-700/60 p-8 rounded-3xl shadow-2xl relative overflow-hidden backdrop-blur-md">
+        
+        {/* Subtle decorative glow */}
+        <div className="absolute -top-16 -right-16 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl"></div>
+        <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+
+        {/* Logo and Greeting */}
+        {/* Professional Logo: Majestic Sun-Rising Book Graphic (BasHA Branding) */}
+        <div className="text-center space-y-4 relative">
+          <div className="inline-flex relative items-center justify-center">
+            {/* Soft background solar corona glow overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-amber-500/30 via-orange-500/20 to-transparent rounded-full blur-xl scale-150 animate-pulse"></div>
+            
+            {/* Circular Solar-Shield Medallion */}
+            <div className="relative p-4 bg-slate-950 border border-amber-500/30 shadow-2xl rounded-3xl flex flex-col items-center justify-center w-24 h-24 overflow-hidden group">
+              {/* Spinning compass/dashed ring */}
+              <div className="absolute inset-1.5 border border-dashed border-amber-500/20 rounded-2xl animate-[spin_12s_linear_infinite]"></div>
+              
+              {/* Solar disk core */}
+              <div className="absolute -bottom-2 w-14 h-14 bg-gradient-to-t from-amber-500 via-orange-500 to-yellow-400 opacity-30 rounded-full blur-xs"></div>
+              
+              {/* Rotating sun icon */}
+              <div className="absolute bottom-3 text-amber-500/65">
+                <Sun className="w-12 h-12 animate-[spin_12s_linear_infinite]" />
+              </div>
+              
+              {/* Sun-emerging Book icon */}
+              <div className="absolute bottom-4.5 z-10 text-amber-300 drop-shadow-[0_4px_16px_rgba(245,158,11,0.9)] transform group-hover:scale-110 transition-transform duration-300">
+                <BookOpen className="w-8 h-8 text-yellow-300 fill-amber-500/10" />
+              </div>
+
+              {/* Solar flame sparks */}
+              <div className="absolute top-4 w-1 h-3 bg-yellow-300 rounded-full animate-pulse"></div>
+              <div className="absolute top-5 right-5 w-2 h-1 bg-yellow-405 rounded-full"></div>
+              <div className="absolute top-5 left-5 w-2 h-1 bg-yellow-405 rounded-full"></div>
+            </div>
+          </div>
+          
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xs font-black tracking-widest bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent px-1.5 py-0.5 bg-slate-950 border border-amber-500/30 rounded-md font-mono shadow-inner select-none">BasHA</span>
+              <h2 className="text-2xl font-black tracking-tight text-white font-sans font-extrabold">
+                بوابة الدخول الموحد
+              </h2>
+            </div>
+            <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
+              منصة <span className="font-bold text-yellow-450 text-amber-400">باشا BasHA</span> الذكية لإدارة المكتبات، الاستعارات، وتدقيق تعليمات SQL
+            </p>
+          </div>
+        </div>
+
+        {/* Tab selection */}
+        <div className="bg-slate-950/60 p-1.5 rounded-2xl flex gap-1.5 border border-slate-700/30">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("student");
+              setError(null);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              activeTab === "student"
+                ? "bg-teal-600 text-white shadow-md shadow-teal-900/10"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            فضاء الطلاب والمشتركين
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("admin");
+              setError(null);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              activeTab === "admin"
+                ? "bg-indigo-650 text-white shadow-md shadow-indigo-900/10"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            بوابة الإدارة والمشرفين
+          </button>
+        </div>
+
+        {/* Alert state */}
+        {error && (
+          <div id="login-error-alert" className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs flex gap-2 items-center">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Login form */}
+        <form onSubmit={handleLoginSubmit} className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-350 block">
+              {activeTab === "student" ? "الاسم الأول للطالب *" : "الاسم الأول للمدير *"}
+            </label>
+            <div className="relative">
+              <span className="absolute right-3.5 top-3 text-slate-500">
+                <User className="w-4 h-4" />
+              </span>
+              <input
+                id="login-firstname-input"
+                type="text"
+                required
+                placeholder={activeTab === "student" ? "مثال: محمد، سارة، عمر" : "الافتراضي: أدمن"}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full pr-10 pl-4 py-2.5 bg-slate-900/80 border border-slate-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-xl text-sm transition-all text-white outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-350 block">كلمة المرور *</label>
+            <div className="relative">
+              <span className="absolute right-3.5 top-3 text-slate-500">
+                <Lock className="w-4 h-4" />
+              </span>
+              <input
+                id="login-password-input"
+                type="password"
+                required
+                placeholder={activeTab === "student" ? "الافتراضي: student123" : "الافتراضي: admin123"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pr-10 pl-4 py-2.5 bg-slate-900/80 border border-slate-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-xl text-sm transition-all text-white outline-none"
+              />
+            </div>
+          </div>
+
+          <button
+            id="login-submit-button"
+            type="submit"
+            className={`w-full py-3 rounded-xl text-sm font-extrabold focus:outline-none transition-all shadow-md mt-2 flex items-center justify-center gap-2 ${
+              activeTab === "student"
+                ? "bg-teal-500 hover:bg-teal-600 text-slate-950 focus:ring-teal-500"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500"
+            }`}
+          >
+            تسجيل الدخول الآمن
+          </button>
+        </form>
+
+        {/* Quick Click credentials widget */}
+        <div className="border-t border-slate-700/50 pt-5 space-y-4">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+            <span className="font-semibold text-slate-300">الدخول السريع التجريبي (كبسة واحدة):</span>
+          </div>
+
+          <div className="space-y-3">
+            {/* Quick admin */}
+            <div className="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-xl border border-slate-700/30">
+              <div className="text-[11px] text-slate-400">
+                <span className="font-bold text-indigo-400 ml-1">حساب المسؤول (Admin):</span>
+                الاسم الأول: <code className="text-slate-200">أدمن</code> | السر: <code className="text-slate-200">admin123</code>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  handleQuickLogin("admin", { name: demoUsers.admin.name, pass: demoUsers.admin.password })
+                }
+                className="text-[10px] font-bold bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2.5 py-1 rounded-lg transition-all border border-indigo-500/20"
+              >
+                دخول كمدير ⚡
+              </button>
+            </div>
+
+            {/* Quick students list */}
+            <div className="bg-slate-900/40 p-3 rounded-xl border border-slate-700/30 space-y-2">
+              <span className="text-[11px] font-bold text-teal-400 block">طلاب مسجلون بالنظام (تطابق الاسم الأول):</span>
+              <div className="grid grid-cols-2 gap-2">
+                {demoUsers.students.map((stu) => (
+                  <button
+                    key={stu.id}
+                    type="button"
+                    onClick={() =>
+                      handleQuickLogin("student", {
+                        name: stu.firstName,
+                        pass: "student123",
+                        memberId: stu.id,
+                      })
+                    }
+                    className="flex flex-col items-start bg-slate-800 hover:bg-slate-750 p-2 rounded-lg border border-slate-700 text-right transition-all text-slate-300 group"
+                  >
+                    <span className="text-[11px] font-extrabold group-hover:text-teal-400">{stu.firstName}</span>
+                    <span className="text-[9px] text-slate-500">كلمة المرور: student123</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1">
+          <Info className="w-3 h-3 text-slate-500" />
+          <span>يتطابق اسم الطالب مع سجل المشتركين الموجود في قاعدة بيانات الأعضاء.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
